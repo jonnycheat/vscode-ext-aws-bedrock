@@ -1,13 +1,13 @@
 {
   "name": "aws-bedrock-lm-provider",
-  "displayName": "AWS Bedrock Language Model Provider",
-  "description": "Provides AWS Bedrock Claude models in the VS Code Copilot model picker",
+  "displayName": "AWS Bedrock LM Provider",
+  "description": "Provides AWS Bedrock Models in the VS Code Copilot model picker",
   "version": "0.1.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jonnycheat/aws-bedrock-lm-provider.git"
+    "url": "https://github.com/jonnycheat/vscode-ext-aws-bedrock.git"
   },
-  "publisher": "aws-bedrock-lm",
+  "publisher": "jonnycheat",
   "engines": {
     "vscode": "^1.104.0"
   },
