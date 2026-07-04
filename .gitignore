@@ -4,3 +4,4 @@ dist/
 *.js.map
 .vscode-test/
 out/
+package-lock.json
