@@ -19,6 +19,8 @@ import {
 import {
   type ModelMetadata,
   type ModelDef,
+  parseBedrockId,
+  formatModelName,
   getModelMetadata,
   FALLBACK_MODELS,
 } from './models';
@@ -53,10 +55,6 @@ function injectBearerToken(stack: any, apiKey: string): void {
   );
 }
 
-function cleanModelId(bedrockId: string): string {
-  return bedrockId.replace(/^(us|eu|ap)\./, '').replace(/(-v\d+:\d+|-v\d+)$/, '');
-}
-
 async function fetchModels(apiKey: string): Promise<ModelDef[]> {
   const client = new BedrockClient({
     region: 'us-east-1',
@@ -70,26 +68,25 @@ async function fetchModels(apiKey: string): Promise<ModelDef[]> {
   try {
     const resp = await client.send(new ListInferenceProfilesCommand({ typeEquals: 'SYSTEM_DEFINED' }));
     for (const p of resp.inferenceProfileSummaries ?? []) {
-      const { inferenceProfileId: bedrockId, inferenceProfileName: rawName } = p;
-      if (!bedrockId || !rawName) { continue; }
-      const lower = bedrockId.toLowerCase();
-      if (!lower.includes('claude') && !lower.includes('nova') && !lower.includes('llama') && !lower.includes('mistral')) { continue; }
-      const id = cleanModelId(bedrockId);
+      const { inferenceProfileId: id } = p;
+      if (!id) { continue; }
+      const parsed = parseBedrockId(id);
+      if (!['claude', 'nova', 'llama', 'mistral'].includes(parsed.family)) { continue; }
       if (seen.has(id)) { continue; }
       seen.add(id);
-      models.push({ id, name: rawName, bedrockId, ...getModelMetadata(bedrockId) });
+      models.push({ id, name: formatModelName(parsed), ...getModelMetadata(id) });
     }
   } catch { /* fall through to foundation models */ }
 
   try {
     const resp = await client.send(new ListFoundationModelsCommand({ byOutputModality: 'TEXT' }));
     for (const fm of resp.modelSummaries ?? []) {
-      const { modelId: bedrockId, modelName: rawName } = fm;
-      if (!bedrockId || !rawName || !fm.responseStreamingSupported) { continue; }
-      const id = cleanModelId(bedrockId);
+      const { modelId: id } = fm;
+      if (!id || !fm.responseStreamingSupported) { continue; }
       if (seen.has(id)) { continue; }
       seen.add(id);
-      models.push({ id, name: `${rawName} (${fm.providerName ?? 'AWS'})`, bedrockId, ...getModelMetadata(bedrockId) });
+      const parsed = parseBedrockId(id);
+      models.push({ id, name: formatModelName(parsed), ...getModelMetadata(id) });
     }
   } catch { /* ignore */ }
 
@@ -139,15 +136,7 @@ class CostTracker {
   }
 }
 
-function deriveFamily(bedrockId: string): string {
-  const lower = bedrockId.toLowerCase();
-  if (lower.includes('claude'))  { return 'claude'; }
-  if (lower.includes('nova'))    { return 'nova'; }
-  if (lower.includes('llama'))   { return 'llama'; }
-  if (lower.includes('mistral')) { return 'mistral'; }
-  if (lower.includes('titan'))   { return 'titan'; }
-  return 'unknown';
-}
+
 
 function mimeToBedrockFormat(mime: string): typeof ImageFormat[keyof typeof ImageFormat] | null {
   switch (mime.toLowerCase()) {
@@ -340,7 +329,7 @@ class BedrockProvider implements vscode.LanguageModelChatProvider {
       const info: vscode.LanguageModelChatInformation & Record<string, unknown> = {
         id: m.id,
         name: m.name,
-        family: deriveFamily(m.bedrockId),
+        family: parseBedrockId(m.id).family,
         version: '1.0.0',
         maxInputTokens: m.maxInputTokens,
         maxOutputTokens: m.maxOutputTokens,
@@ -395,7 +384,7 @@ class BedrockProvider implements vscode.LanguageModelChatProvider {
     }
 
     const input: ConverseStreamCommandInput = {
-      modelId: entry.bedrockId,
+      modelId: entry.id,
       messages: bedrockMessages,
       system: systemWithCaching,
       inferenceConfig: { maxTokens: entry.maxOutputTokens },
