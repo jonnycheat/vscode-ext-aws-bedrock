@@ -16,6 +16,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
@@ -35,7 +40,3 @@ jobs:
               --repo="$GITHUB_REPOSITORY" \
               --title="${tag#v}" \
               --generate-notes
-            - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "24"
