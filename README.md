@@ -30,6 +30,10 @@ To force-reset the tracker, use **AWS Bedrock: Reset Cost Tracker** from the Com
 | AWS Bedrock: Refresh Models | Force a model list refresh |
 | AWS Bedrock: Reset Cost Tracker | Zero out the running total |
 
+## Installation
+
+Download the `.vsix` file from the [latest GitHub release](https://github.com/YOUR_USERNAME/vscode-ext-aws-bedrock/releases/latest) and install it via **Extensions: Install from VSIX...** in the Command Palette.
+
 ## Requirements
 
 A Bedrock-compatible API key with access to the models you want to use. The extension uses Bearer token authentication, so standard AWS IAM credentials are not required.
