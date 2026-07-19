@@ -1,11 +1,11 @@
 {
-  "name": "aws-bedrock-lm-provider",
-  "displayName": "AWS Bedrock LM Provider",
-  "description": "Provides AWS Bedrock Models in the VS Code Copilot model picker",
+  "name": "vscode-ai-providers",
+  "displayName": "VS Code AI Providers",
+  "description": "Provides AI Models (AWS Bedrock, Azure Foundry) in the VS Code Copilot model picker",
   "version": "0.1.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jonnycheat/vscode-ext-aws-bedrock.git"
+    "url": "https://github.com/jonnycheat/vscode-ext-ai-providers.git"
   },
   "publisher": "jonnycheat",
   "engines": {
@@ -27,46 +27,78 @@
       {
         "vendor": "bedrock",
         "displayName": "AWS Bedrock"
+      },
+      {
+        "vendor": "azure-foundry",
+        "displayName": "Azure AI Foundry"
       }
     ],
-    "configuration": {
-      "title": "AWS Bedrock",
-      "properties": {
-        "awsBedrock.region": {
-          "type": "string",
-          "default": "us-east-1",
-          "description": "AWS region for Bedrock API calls (used as geo-inference prefix).",
-          "enum": [
-            "us-east-1",
-            "us-west-2",
-            "eu-central-1",
-            "eu-west-1",
-            "ap-northeast-1",
-            "ap-southeast-2"
-          ]
+    "configuration": [
+      {
+        "title": "AWS Bedrock",
+        "properties": {
+          "aiProviders.bedrock.region": {
+            "type": "string",
+            "default": "us-east-1",
+            "description": "AWS region for Bedrock API calls (used as geo-inference prefix).",
+            "enum": [
+              "us-east-1",
+              "us-west-2",
+              "eu-central-1",
+              "eu-west-1",
+              "ap-northeast-1",
+              "ap-southeast-2"
+            ]
+          }
+        }
+      },
+      {
+        "title": "Azure AI Foundry",
+        "properties": {
+          "aiProviders.azure.endpoint": {
+            "type": "string",
+            "default": "",
+            "description": "Azure AI Foundry / GitHub Models endpoint URL (e.g. https://models.inference.ai.azure.com)."
+          }
         }
       }
-    },
+    ],
     "commands": [
       {
-        "command": "awsBedrock.configure",
+        "command": "aiProviders.bedrock.configure",
         "title": "AWS Bedrock: Configure API Key & Region"
       },
       {
-        "command": "awsBedrock.updateApiKey",
+        "command": "aiProviders.bedrock.updateApiKey",
         "title": "AWS Bedrock: Update API Key"
       },
       {
-        "command": "awsBedrock.changeRegion",
+        "command": "aiProviders.bedrock.changeRegion",
         "title": "AWS Bedrock: Change Region"
       },
       {
-        "command": "awsBedrock.refreshModels",
+        "command": "aiProviders.bedrock.refreshModels",
         "title": "AWS Bedrock: Refresh Model List"
       },
       {
-        "command": "awsBedrock.resetCost",
-        "title": "AWS Bedrock: Reset Cost Tracker"
+        "command": "aiProviders.resetTokens",
+        "title": "AI Providers: Reset Token Tracker"
+      },
+      {
+        "command": "aiProviders.azure.configure",
+        "title": "Azure AI Foundry: Configure API Key & Endpoint"
+      },
+      {
+        "command": "aiProviders.azure.updateEndpoint",
+        "title": "Azure AI Foundry: Update Endpoint"
+      },
+      {
+        "command": "aiProviders.azure.updateApiKey",
+        "title": "Azure AI Foundry: Update API Key"
+      },
+      {
+        "command": "aiProviders.azure.refreshModels",
+        "title": "Azure AI Foundry: Refresh Model List"
       }
     ]
   },
@@ -76,6 +108,8 @@
     "build:dev": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
     "watch": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap --watch",
     "compile": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "package": "vsce package"
   },
   "devDependencies": {
@@ -83,10 +117,12 @@
     "@types/vscode": "^1.104.0",
     "@vscode/vsce": "^3.0.0",
     "esbuild": "^0.23.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vitest": "^2.1.9"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock": "^3.1079.0",
-    "@aws-sdk/client-bedrock-runtime": "^3.600.0"
+    "@aws-sdk/client-bedrock-runtime": "^3.600.0",
+    "openai": "^6.48.0"
   }
 }

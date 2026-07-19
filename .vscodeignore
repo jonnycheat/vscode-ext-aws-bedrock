@@ -9,3 +9,6 @@ esbuild.js
 **/*.ts
 !dist/**
 node_modules/**
+implementation-plan.md
+**/*.test.ts
+.github/**
