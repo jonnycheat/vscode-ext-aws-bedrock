@@ -2,7 +2,7 @@
   "name": "vscode-ai-providers",
   "displayName": "VS Code AI Providers",
   "description": "Provides AI Models (AWS Bedrock, Azure Foundry) in the VS Code Copilot model picker",
-  "version": "0.1.0",
+  "version": "1.0.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/jonnycheat/vscode-ext-ai-providers.git"

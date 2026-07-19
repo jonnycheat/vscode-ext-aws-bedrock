@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import OpenAI from 'openai';
-import { getModelMetadata, type ModelDef } from '../models';
+import { type ModelDef } from '../models';
 import { createModelInformation, extractMessageText, reportUsage } from './provider';
 import type { IProvider, UsageEvent } from './provider';
 import { getAzureEndpoint, SECRET_KEYS } from '../config';
@@ -14,12 +14,12 @@ interface AzureModelDef extends ModelDef {
 const AZURE_OAI_API_VERSION = '2024-10-21';
 
 const AZURE_MODELS: AzureModelDef[] = [
-  { id: 'gpt-5.6-sol', modelId: 'gpt-5.6-sol', name: 'OpenAI GPT-5.6 Sol', ...getModelMetadata('gpt-5.6-sol') },
-  { id: 'gpt-5.6-terra', modelId: 'gpt-5.6-terra', name: 'OpenAI GPT-5.6 Terra', ...getModelMetadata('gpt-5.6-terra') },
-  { id: 'gpt-5.6-luna', modelId: 'gpt-5.6-luna', name: 'OpenAI GPT-5.6 Luna', ...getModelMetadata('gpt-5.6-luna') },
-  { id: 'gpt-5.3-codex', modelId: 'gpt-5.3-codex', name: 'OpenAI GPT-5.3 Codex', ...getModelMetadata('gpt-5.3-codex') },
-  { id: 'gpt-5.4-mini', modelId: 'gpt-5.4-mini', name: 'OpenAI GPT-5.4 Mini', ...getModelMetadata('gpt-5.4-mini') },
-  { id: 'gpt-5.4-pro', modelId: 'gpt-5.4-pro', name: 'OpenAI GPT-5.4 Pro', ...getModelMetadata('gpt-5.4-pro') },
+  { id: 'gpt-5.6-sol',   modelId: 'gpt-5.6-sol',   name: 'OpenAI GPT-5.6 Sol',   maxInputTokens: 1_050_000, maxOutputTokens: 128_000, supportsThinking: true,  supportsImages: true },
+  { id: 'gpt-5.6-terra', modelId: 'gpt-5.6-terra', name: 'OpenAI GPT-5.6 Terra', maxInputTokens: 1_050_000, maxOutputTokens: 128_000, supportsThinking: true,  supportsImages: true },
+  { id: 'gpt-5.6-luna',  modelId: 'gpt-5.6-luna',  name: 'OpenAI GPT-5.6 Luna',  maxInputTokens: 1_050_000, maxOutputTokens: 128_000, supportsThinking: true,  supportsImages: true },
+  { id: 'gpt-5.3-codex', modelId: 'gpt-5.3-codex', name: 'OpenAI GPT-5.3 Codex', maxInputTokens: 1_050_000, maxOutputTokens: 128_000, supportsThinking: true,  supportsImages: false },
+  { id: 'gpt-5.4-mini',  modelId: 'gpt-5.4-mini',  name: 'OpenAI GPT-5.4 Mini',  maxInputTokens: 1_050_000, maxOutputTokens: 128_000, supportsThinking: true,  supportsImages: true },
+  { id: 'gpt-5.4-pro',   modelId: 'gpt-5.4-pro',   name: 'OpenAI GPT-5.4 Pro',   maxInputTokens: 1_050_000, maxOutputTokens: 128_000, supportsThinking: true,  supportsImages: true },
 ];
 
 function isAzureOpenAIEndpoint(endpoint: string): boolean {

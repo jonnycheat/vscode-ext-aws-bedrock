@@ -293,9 +293,6 @@ export class BedrockProvider implements IProvider {
     return models.map(m => {
       return createModelInformation(m, {
         family: parseBedrockId(m.id).family,
-        cacheTooltip: m.cacheCostPerMillion && m.cacheWriteCostPerMillion
-          ? `Cache: $${m.cacheCostPerMillion} read / $${m.cacheWriteCostPerMillion} write per 1M tokens`
-          : undefined,
         configurationSchema: m.supportsThinking ? THINKING_EFFORT_SCHEMA : undefined,
       });
     });

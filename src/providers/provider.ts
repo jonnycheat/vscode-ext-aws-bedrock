@@ -26,7 +26,6 @@ export interface IProvider extends vscode.LanguageModelChatProvider, vscode.Disp
 
 export interface ModelInfoOptions {
   family: string;
-  cacheTooltip?: string;
   configurationSchema?: unknown;
 }
 
@@ -34,8 +33,6 @@ export function createModelInformation(model: ModelDef, options: ModelInfoOption
   const ctxK = Math.round(model.maxInputTokens / 1000);
   const tooltipParts = [
     `Context: ${ctxK}k tokens`,
-    `Input: $${model.inputCostPerMillion} / Output: $${model.outputCostPerMillion} per 1M tokens`,
-    options.cacheTooltip ?? '',
     model.supportsImages ? 'Supports image input' : 'Text only',
     model.supportsThinking ? 'Supports extended thinking' : '',
   ].filter(Boolean);
@@ -47,15 +44,10 @@ export function createModelInformation(model: ModelDef, options: ModelInfoOption
     version: '1.0.0',
     maxInputTokens: model.maxInputTokens,
     maxOutputTokens: model.maxOutputTokens,
-    detail: `${ctxK}k ctx · $${model.inputCostPerMillion}/$${model.outputCostPerMillion}`,
+    detail: `${ctxK}k ctx`,
     tooltip: tooltipParts.join('\n'),
     capabilities: { toolCalling: true, imageInput: model.supportsImages },
     configurationSchema: options.configurationSchema,
-    pricing: `In: $${model.inputCostPerMillion} · Out: $${model.outputCostPerMillion} per 1M tokens`,
-    inputCost: model.inputCostPerMillion,
-    outputCost: model.outputCostPerMillion,
-    cacheCost: model.cacheCostPerMillion,
-    cacheWriteCost: model.cacheWriteCostPerMillion,
     isBYOK: true,
   };
   return info;
