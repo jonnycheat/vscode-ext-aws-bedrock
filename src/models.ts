@@ -75,11 +75,21 @@ export interface ModelMetadata {
 }
 
 export interface ModelDef extends ModelMetadata {
-  id: string;
+  modelId: string;
   name: string;
+  provider: 'aws' | 'azure';
 }
 
-export const PRICING_TABLE: { pattern: RegExp; meta: ModelMetadata }[] = [
+export const MODEL_CATALOG: ModelDef[] = [
+  { modelId: 'gpt-5.6-sol', name: 'OpenAI GPT-5.6 Sol', provider: 'azure', maxInputTokens: 1_050_000, maxOutputTokens: 128_000, supportsThinking: true, supportsImages: true },
+  { modelId: 'gpt-5.6-terra', name: 'OpenAI GPT-5.6 Terra', provider: 'azure', maxInputTokens: 1_050_000, maxOutputTokens: 128_000, supportsThinking: true, supportsImages: true },
+  { modelId: 'gpt-5.6-luna', name: 'OpenAI GPT-5.6 Luna', provider: 'azure', maxInputTokens: 1_050_000, maxOutputTokens: 128_000, supportsThinking: true, supportsImages: true },
+  { modelId: 'gpt-5.3-codex', name: 'OpenAI GPT-5.3 Codex', provider: 'azure', maxInputTokens: 1_050_000, maxOutputTokens: 128_000, supportsThinking: true, supportsImages: false },
+  { modelId: 'gpt-5-mini', name: 'OpenAI GPT-5 Mini', provider: 'azure', maxInputTokens: 1_050_000, maxOutputTokens: 128_000, supportsThinking: true, supportsImages: true },
+  { modelId: 'gpt-5.4-pro', name: 'OpenAI GPT-5.4 Pro', provider: 'azure', maxInputTokens: 1_050_000, maxOutputTokens: 128_000, supportsThinking: true, supportsImages: true },
+];
+
+export const MODEL_METADATA_RULES: { pattern: RegExp; meta: ModelMetadata }[] = [
   { pattern: /claude-fable-5/, meta: { maxInputTokens: 200_000, maxOutputTokens: 32_000, supportsThinking: true, supportsImages: true } },
   { pattern: /claude-sonnet-5/, meta: { maxInputTokens: 200_000, maxOutputTokens: 32_000, supportsThinking: true, supportsImages: true } },
 
@@ -148,6 +158,6 @@ export function getModelMetadata(bedrockId: string): ModelMetadata {
     .replace(/^global\./i, '')
     .replace(/^[a-z0-9-]+\./, '')
     .replace(/^\./, '');
-  return PRICING_TABLE.find(e => e.pattern.test(normalized))?.meta ?? DEFAULT_METADATA;
+  return MODEL_METADATA_RULES.find(e => e.pattern.test(normalized))?.meta ?? DEFAULT_METADATA;
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_METADATA, FALLBACK_MODELS, formatModelName, getModelMetadata, parseBedrockId } from './models';
+import { DEFAULT_METADATA, MODEL_CATALOG, formatModelName, getModelMetadata, parseBedrockId } from './models';
 
 describe('Bedrock model metadata', () => {
   it('parses regional model identifiers', () => {
@@ -13,9 +13,12 @@ describe('Bedrock model metadata', () => {
       .toBe('Anthropic Claude Sonnet 4 [GLOBAL]');
   });
 
-  it('matches known pricing and falls back safely', () => {
-    expect(getModelMetadata('anthropic.claude-3-haiku').inputCostPerMillion).toBe(0.25);
+  it('matches model metadata and falls back safely', () => {
+    expect(getModelMetadata('anthropic.claude-3-haiku')).toMatchObject({
+      maxInputTokens: 200_000,
+      supportsImages: true,
+    });
     expect(getModelMetadata('unknown.provider.model')).toEqual(DEFAULT_METADATA);
-    expect(FALLBACK_MODELS.length).toBeGreaterThan(0);
+    expect(MODEL_CATALOG.length).toBeGreaterThan(0);
   });
 });

@@ -24,31 +24,13 @@ import {
   formatModelName,
   getModelMetadata,
 } from '../models';
-import { createModelInformation, extractMessageText, reportUsage } from './provider';
+import { createModelInformation, extractMessageText, reportUsage, THINKING_EFFORT_SCHEMA } from './provider';
 import type { IProvider, UsageEvent } from './provider';
 import { getBedrockRegion, SECRET_KEYS } from '../config';
 import { createAbortController } from '../cancellation';
 import type { ProviderLogger } from '../diagnostics';
 
 const MODEL_CACHE_TTL = 30 * 60 * 1000;
-
-const THINKING_EFFORT_SCHEMA = {
-  properties: {
-    thinkingEffort: {
-      type: 'string' as const,
-      title: 'Thinking Effort',
-      enum: ['low', 'medium', 'high'],
-      enumItemLabels: ['Low', 'Medium', 'High'],
-      enumDescriptions: [
-        'Faster responses with less reasoning',
-        'Balanced reasoning and speed',
-        'Greater reasoning depth but slower',
-      ],
-      default: 'medium',
-      group: 'navigation',
-    },
-  },
-} as const;
 
 function injectBearerToken(stack: any, apiKey: string): void {
   stack.add(
@@ -87,7 +69,7 @@ async function fetchModels(apiKey: string): Promise<ModelDef[]> {
       if (!['claude', 'nova', 'llama', 'mistral'].includes(parsed.family)) { continue; }
       if (seen.has(id)) { continue; }
       seen.add(id);
-      models.push({ id, name: formatModelName(parsed), ...getModelMetadata(id) });
+      models.push({ modelId: id, name: formatModelName(parsed), provider: 'aws', ...getModelMetadata(id) });
     }
   } catch { /* fall through to foundation models */ }
 
@@ -104,7 +86,7 @@ async function fetchModels(apiKey: string): Promise<ModelDef[]> {
       if (fm.inputModalities) {
         meta.supportsImages = fm.inputModalities.includes(ModelModality.IMAGE);
       }
-      models.push({ id, name: formatModelName(parsed), ...meta });
+      models.push({ modelId: id, name: formatModelName(parsed), provider: 'aws', ...meta });
     }
   } catch { /* ignore */ }
 
@@ -292,7 +274,7 @@ export class BedrockProvider implements IProvider {
     const models = await this.getModels();
     return models.map(m => {
       return createModelInformation(m, {
-        family: parseBedrockId(m.id).family,
+        family: parseBedrockId(m.modelId).family,
         configurationSchema: m.supportsThinking ? THINKING_EFFORT_SCHEMA : undefined,
       });
     });
@@ -311,7 +293,7 @@ export class BedrockProvider implements IProvider {
     }
 
     const allModels = await this.getModels();
-    const entry = allModels.find(m => m.id === model.id);
+    const entry = allModels.find(m => m.modelId === model.id);
     if (!entry) { throw new Error(`AWS Bedrock: model "${model.id}" is no longer available. Refresh the model list.`); }
     const { bedrockMessages, system, tools } = convertMessages(messages, options);
 
@@ -335,7 +317,7 @@ export class BedrockProvider implements IProvider {
     }
 
     const input: ConverseStreamCommandInput = {
-      modelId: entry.id,
+      modelId: entry.modelId,
       messages: bedrockMessages,
       system: systemWithCaching,
       inferenceConfig: { maxTokens: entry.maxOutputTokens },
@@ -352,7 +334,7 @@ export class BedrockProvider implements IProvider {
     injectBearerToken(client.middlewareStack, apiKey);
 
     const abortController = createAbortController(token);
-    this.logger?.info(`AWS Bedrock: starting request for ${entry.id}`);
+    this.logger?.info(`AWS Bedrock: starting request for ${entry.modelId}`);
     const response = await client.send(new ConverseStreamCommand(input), { abortSignal: abortController.signal });
     if (!response.stream) { return; }
 

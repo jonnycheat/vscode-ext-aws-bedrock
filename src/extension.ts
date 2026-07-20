@@ -24,7 +24,12 @@ class TokenTracker {
     if (typeof raw === 'number') {
       this.stats = { total: raw, byProvider: {}, byModel: {} };
     } else if (raw && typeof raw === 'object' && 'total' in raw) {
-      this.stats = raw as TokenStats;
+      const saved = raw as Partial<TokenStats>;
+      this.stats = {
+        total: typeof saved.total === 'number' ? saved.total : 0,
+        byProvider: saved.byProvider ?? {},
+        byModel: saved.byModel ?? {},
+      };
     } else {
       this.stats = { total: 0, byProvider: {}, byModel: {} };
     }
@@ -36,10 +41,8 @@ class TokenTracker {
     const sum = inputTokens + outputTokens;
     this.stats.total += sum;
 
-    if (!this.stats.byProvider) { this.stats.byProvider = {}; }
     this.stats.byProvider[providerLabel] = (this.stats.byProvider[providerLabel] ?? 0) + sum;
 
-    if (!this.stats.byModel) { this.stats.byModel = {}; }
     if (!this.stats.byModel[providerLabel]) { this.stats.byModel[providerLabel] = {}; }
     this.stats.byModel[providerLabel][modelName] = (this.stats.byModel[providerLabel][modelName] ?? 0) + sum;
 
@@ -57,7 +60,7 @@ class TokenTracker {
     return `${this.stats.total.toLocaleString()} tokens`;
   }
 
-  getStats(): TokenStats {
+  getStats(): Readonly<TokenStats> {
     return this.stats;
   }
 
@@ -132,7 +135,7 @@ function registerRefreshCommand(
   }));
 }
 
-function registerSecretCommand(
+function registerUpdateCommand(
   context: vscode.ExtensionContext,
   command: string,
   provider: IProvider,
@@ -193,10 +196,10 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
   );
 
-  registerSecretCommand(context, 'aiProviders.bedrock.updateApiKey', provider, () => runUpdateApiKey(context.secrets));
+  registerUpdateCommand(context, 'aiProviders.bedrock.updateApiKey', provider, () => runUpdateApiKey(context.secrets));
   registerRefreshCommand(context, 'aiProviders.bedrock.refreshModels', provider, 'AWS Bedrock');
-  registerSecretCommand(context, 'aiProviders.azure.updateEndpoint', azureProvider, runUpdateAzureEndpoint);
-  registerSecretCommand(context, 'aiProviders.azure.updateApiKey', azureProvider, () => runUpdateAzureApiKey(context.secrets));
+  registerUpdateCommand(context, 'aiProviders.azure.updateEndpoint', azureProvider, runUpdateAzureEndpoint);
+  registerUpdateCommand(context, 'aiProviders.azure.updateApiKey', azureProvider, () => runUpdateAzureApiKey(context.secrets));
   registerRefreshCommand(context, 'aiProviders.azure.refreshModels', azureProvider, 'Azure AI Foundry');
   context.subscriptions.push(vscode.commands.registerCommand('aiProviders.refreshModels', async () => {
     await Promise.all([provider.refresh(), azureProvider.refresh()]);

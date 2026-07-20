@@ -1,42 +1,14 @@
 import * as vscode from 'vscode';
 import OpenAI from 'openai';
-import { type ModelDef } from '../models';
-import { createModelInformation, extractMessageText, reportUsage } from './provider';
+import { MODEL_CATALOG, type ModelDef } from '../models';
+import { createModelInformation, extractMessageText, getModelFamily, reportUsage, THINKING_EFFORT_SCHEMA } from './provider';
 import type { IProvider, UsageEvent } from './provider';
 import { getAzureEndpoint, SECRET_KEYS } from '../config';
 import { createAbortController } from '../cancellation';
 import type { ProviderLogger } from '../diagnostics';
+import { extractToolResultText } from '../text';
 
-interface AzureModelDef extends ModelDef {
-  modelId: string;
-}
-
-const AZURE_MODELS: AzureModelDef[] = [
-  { id: 'gpt-5.6-sol', modelId: 'gpt-5.6-sol', name: 'OpenAI GPT-5.6 Sol', maxInputTokens: 1_050_000, maxOutputTokens: 128_000, supportsThinking: true, supportsImages: true },
-  { id: 'gpt-5.6-terra', modelId: 'gpt-5.6-terra', name: 'OpenAI GPT-5.6 Terra', maxInputTokens: 1_050_000, maxOutputTokens: 128_000, supportsThinking: true, supportsImages: true },
-  { id: 'gpt-5.6-luna', modelId: 'gpt-5.6-luna', name: 'OpenAI GPT-5.6 Luna', maxInputTokens: 1_050_000, maxOutputTokens: 128_000, supportsThinking: true, supportsImages: true },
-  { id: 'gpt-5.3-codex', modelId: 'gpt-5.3-codex', name: 'OpenAI GPT-5.3 Codex', maxInputTokens: 1_050_000, maxOutputTokens: 128_000, supportsThinking: true, supportsImages: false },
-  { id: 'gpt-5.4-mini', modelId: 'gpt-5.4-mini', name: 'OpenAI GPT-5.4 Mini', maxInputTokens: 1_050_000, maxOutputTokens: 128_000, supportsThinking: true, supportsImages: true },
-  { id: 'gpt-5.4-pro', modelId: 'gpt-5.4-pro', name: 'OpenAI GPT-5.4 Pro', maxInputTokens: 1_050_000, maxOutputTokens: 128_000, supportsThinking: true, supportsImages: true },
-];
-
-const THINKING_EFFORT_SCHEMA = {
-  properties: {
-    thinkingEffort: {
-      type: 'string',
-      title: 'Thinking Effort',
-      enum: ['low', 'medium', 'high'],
-      enumItemLabels: ['Low', 'Medium', 'High'],
-      enumDescriptions: [
-        'Faster responses with less reasoning',
-        'Balanced reasoning and speed',
-        'Greater reasoning depth but slower',
-      ],
-      default: 'medium',
-      group: 'navigation',
-    },
-  },
-} as const;
+const AZURE_MODELS = MODEL_CATALOG.filter(model => model.provider === 'azure');
 
 type AzureMessage =
   | { role: 'system'; content: string }
@@ -92,9 +64,7 @@ function convertMessages(
       const p = part as Record<string, unknown>;
 
       if (p && 'callId' in p && 'content' in p && Array.isArray(p['content'])) {
-        const resultText = (p['content'] as unknown[])
-          .map(c => { const cp = c as Record<string, unknown>; return typeof cp?.['value'] === 'string' ? cp['value'] as string : ''; })
-          .join('');
+        const resultText = extractToolResultText(p);
         toolResults.push({ role: 'tool', content: resultText, tool_call_id: p['callId'] as string });
 
       } else if (p && 'callId' in p && 'name' in p && 'input' in p) {
@@ -180,7 +150,7 @@ export class AzureFoundryProvider implements IProvider {
   private readonly _onUsage = new vscode.EventEmitter<UsageEvent>();
   readonly onUsage = this._onUsage.event;
 
-  private readonly models: AzureModelDef[] = AZURE_MODELS;
+  private readonly models: ModelDef[] = AZURE_MODELS;
 
   constructor(private readonly secrets: vscode.SecretStorage, private readonly logger?: ProviderLogger) { }
 
@@ -199,7 +169,7 @@ export class AzureFoundryProvider implements IProvider {
   ): Promise<vscode.LanguageModelChatInformation[]> {
     return this.models.map(m => {
       return createModelInformation(m, {
-        family: m.modelId.toLowerCase().split(/[-_.]/)[0],
+        family: getModelFamily(m.modelId),
         configurationSchema: m.supportsThinking ? THINKING_EFFORT_SCHEMA : undefined,
       });
     });
@@ -221,7 +191,7 @@ export class AzureFoundryProvider implements IProvider {
       throw new Error('Azure AI Foundry: no API key configured. Run "Azure AI Foundry: Update API Key" from the Command Palette.');
     }
 
-    const entry = this.models.find(m => m.id === model.id);
+    const entry = this.models.find(m => m.modelId === model.id);
     if (!entry) {
       throw new Error(`Azure AI Foundry: unknown model "${model.id}"`);
     }
@@ -240,7 +210,7 @@ export class AzureFoundryProvider implements IProvider {
       defaultHeaders: { 'api-key': apiKey },
     });
     const abortController = createAbortController(token);
-    this.logger?.info(`Azure AI Foundry: starting request for ${entry.id}`);
+    this.logger?.info(`Azure AI Foundry: starting request for ${entry.modelId}`);
 
     const request: Record<string, unknown> = {
       model: entry.modelId,

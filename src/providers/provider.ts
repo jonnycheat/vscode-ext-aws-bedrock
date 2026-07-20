@@ -29,6 +29,28 @@ export interface ModelInfoOptions {
   configurationSchema?: unknown;
 }
 
+export const THINKING_EFFORT_SCHEMA = {
+  properties: {
+    thinkingEffort: {
+      type: 'string' as const,
+      title: 'Thinking Effort',
+      enum: ['low', 'medium', 'high'],
+      enumItemLabels: ['Low', 'Medium', 'High'],
+      enumDescriptions: [
+        'Faster responses with less reasoning',
+        'Balanced reasoning and speed',
+        'Greater reasoning depth but slower',
+      ],
+      default: 'medium',
+      group: 'navigation',
+    },
+  },
+} as const;
+
+export function getModelFamily(modelId: string): string {
+  return modelId.toLowerCase().split(/[-_.]/)[0];
+}
+
 export function createModelInformation(model: ModelDef, options: ModelInfoOptions): ProviderModelInfo {
   const ctxK = Math.round(model.maxInputTokens / 1000);
   const tooltipParts = [
@@ -38,7 +60,7 @@ export function createModelInformation(model: ModelDef, options: ModelInfoOption
   ].filter(Boolean);
 
   const info: ProviderModelInfo = {
-    id: model.id,
+    id: model.modelId,
     name: model.name,
     family: options.family,
     version: '1.0.0',
